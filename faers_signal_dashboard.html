@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAERS Signal Detection Platform</title>
+  <style>
+    :root {
+      --fda-navy: #1f3c88;
+      --fda-blue: #0071bc;
+      --fda-blue-dark: #005ea2;
+      --fda-sky: #eaf4fb;
+      --fda-border: #c9dff2;
+      --text: #16324f;
+      --muted: #5b7085;
+      --bg: #f4f9fd;
+      --panel: #ffffff;
+      --panel-soft: #f8fbfe;
+      --success: #2e7d32;
+      --warning: #b26a00;
+      --danger: #b42318;
+      --shadow: 0 16px 40px rgba(18, 52, 88, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #eef6fc 100%);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1460px, calc(100% - 32px));
+      margin: 18px auto 32px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding: 14px 18px;
+      background: var(--panel);
+      border: 1px solid var(--fda-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      font-weight: 800;
+      color: var(--fda-navy);
+      letter-spacing: 0.02em;
+    }
+
+    .tab-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--fda-border);
+      background: #fff;
+      color: var(--fda-blue-dark);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--fda-blue);
+      color: var(--fda-blue);
+    }
+
+    .tab-btn.active {
+      background: var(--fda-blue);
+      color: white;
+      border-color: var(--fda-blue);
+      box-shadow: 0 8px 20px rgba(0, 113, 188, 0.18);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--fda-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    h1, h2, h3 { margin: 0; }
+
+    h2 {
+      font-size: 20px;
+      color: var(--fda-navy);
+      margin-bottom: 8px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      margin: 0 0 16px;
+    }
+
+    .sidebar, .results-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fda-navy);
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--fda-border);
+      background: white;
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 13px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.15s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--fda-blue);
+      box-shadow: 0 0 0 4px rgba(0,113,188,0.12);
+    }
+
+    .field { margin-bottom: 14px; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .chip-input {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 16px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #edf7ff;
+      border: 1px solid #cfe7fb;
+      color: var(--fda-blue-dark);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .chip button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: inherit;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    .helper {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    .btn.primary {
+      background: var(--fda-blue);
+      color: white;
+      box-shadow: 0 10px 20px rgba(0,113,188,0.2);
+    }
+
+    .btn.primary:hover { background: var(--fda-blue-dark); }
+
+    .btn.secondary {
+      background: white;
+      color: var(--fda-blue-dark);
+      border: 1px solid var(--fda-border);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-card {
+      background: var(--panel-soft);
+      border: 1px solid var(--fda-border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .stat-card .k {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .stat-card .v {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--fda-navy);
+    }
+
+    .signal-banner {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      background: linear-gradient(90deg, #eef7ff 0%, #f8fcff 100%);
+      border: 1px solid var(--fda-border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .signal-pill {
+      display: inline-flex;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .signal-pill.high { background: #fdecec; color: var(--danger); }
+    .signal-pill.watch { background: #fff4db; color: var(--warning); }
+    .signal-pill.good { background: #e9f6ec; color: var(--success); }
+
+    .signal-copy {
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .plot-wrap {
+      border: 1px solid var(--fda-border);
+      border-radius: 18px;
+      padding: 14px;
+      background: #fbfdff;
+    }
+
+    svg text {
+      fill: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--fda-border);
+      border-radius: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 13px 12px;
+      border-bottom: 1px solid #e6eef6;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fda-navy);
+      background: #f1f7fc;
+      position: sticky;
+      top: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .sig-yes { color: var(--success); background: #e9f6ec; }
+    .sig-no { color: var(--danger); background: #fdecec; }
+
+    .raw-layout {
+      display: grid;
+      gap: 18px;
+    }
+
+    .spreadsheet-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .sheet-table td, .sheet-table th {
+      min-width: 120px;
+    }
+
+    .arch-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .arch-item {
+      border: 1px solid var(--fda-border);
+      background: var(--panel-soft);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .arch-item strong {
+      display: block;
+      color: var(--fda-navy);
+      margin-bottom: 6px;
+    }
+
+    .arch-item span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1180px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 18px, 100%); }
+      .grid-2, .summary-grid { grid-template-columns: 1fr; }
+      .chip-input, .btn-row, .signal-banner, .spreadsheet-head, .topbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="topbar">
+      <div class="brand">FAERS Signal Dashboard</div>
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="homeTab">Analysis + Results</button>
+        <button class="tab-btn" data-tab="rawTab">Raw Data Sheet</button>
+        <button class="tab-btn" data-tab="deliveryTab">Delivery</button>
+        <button class="tab-btn" data-tab="methodsTab">Methods</button>
+      </div>
+    </section>
+
+    <section id="homeTab" class="tab-panel active">
+      <div class="dashboard">
+        <aside class="sidebar">
+          <div class="card panel">
+            <h2>Analysis Builder</h2>
+            <p class="sub">Enter the drug comparison once, then view the signal summary, forest plot, and results table immediately on the same page.</p>
+
+            <div class="grid-2">
+              <div class="field">
+                <label for="referenceDrug">Reference Drug</label>
+                <input id="referenceDrug" type="text" value="Erbitux 2mg/mL" placeholder="Enter reference drug name" />
+              </div>
+              <div class="field">
+                <label for="mappedReference">Mapped Name</label>
+                <input id="mappedReference" type="text" readonly value="Cetuximab" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="comparatorInput">Comparator Pool</label>
+              <div class="chip-input">
+                <input id="comparatorInput" type="text" placeholder="Type comparator and click Add" />
+                <button class="btn primary" id="addComparator" type="button">Add</button>
+              </div>
+              <div class="chips" id="chips"></div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label for="eventName">Adverse Event (MedDRA)</label>
+                <input id="eventName" list="meddraSuggestions" type="text" value="Anaphylaxis" placeholder="Type MedDRA term" />
+                <datalist id="meddraSuggestions">
+                  <option value="Anaphylaxis"></option>
+                  <option value="Infusion related reaction"></option>
+                  <option value="QT prolonged"></option>
+                  <option value="Interstitial lung disease"></option>
+                  <option value="Rash"></option>
+                  <option value="Stevens-Johnson syndrome"></option>
+                </datalist>
+                <div class="helper">Manual entry with nearest-term matching for misspellings or close phrases.</div>
+              </div>
+              <div class="field">
+                <label for="mappedEvent">Closest Matched Term</label>
+                <input id="mappedEvent" type="text" readonly value="Anaphylaxis" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <label for="startDate">Start Date</label>
+                <input id="startDate" type="date" value="2015-01-01" />
+              </div>
+              <div class="field">
+                <label for="endDate">End Date</label>
+                <input id="endDate" type="date" value="2024-12-31" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="correctionMode">Zero-Cell Handling</label>
+              <select id="correctionMode">
+                <option>Haldane-Anscombe Correction</option>
+                <option>No Correction</option>
+              </select>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn primary" id="runAnalysis" type="button">Run Analysis</button>
+              <button class="btn secondary" id="loadExample" type="button">Load Example</button>
+            </div>
+          </div>
+        </aside>
+
+        <main class="results-stack">
+          <div class="card panel">
+            <div class="signal-banner">
+              <div>
+                <div class="signal-pill high" id="signalBadge">High Signal Detected</div>
+                <h2 id="primarySignal">Anaphylaxis</h2>
+                <div class="signal-copy" id="primarySignalText">Elevated disproportionality remains present for Cetuximab after pooled comparator analysis and FDR control.</div>
+              </div>
+              <div style="min-width: 240px; color: var(--muted); font-size: 14px; line-height: 1.6;">
+                <strong style="display:block; color: var(--fda-navy); margin-bottom: 6px;">Current Analysis</strong>
+                <div id="summaryText">Cetuximab vs pooled comparator landscape</div>
+                <div id="windowText">2015-01-01 through 2024-12-31</div>
+              </div>
+            </div>
+
+            <div class="summary-grid">
+              <div class="stat-card"><div class="k">Pooled OR</div><div class="v" id="orValue">2.84</div></div>
+              <div class="stat-card"><div class="k">95% CI</div><div class="v" id="ciValue">1.92–4.20</div></div>
+              <div class="stat-card"><div class="k">FDR q-value</div><div class="v" id="qValue">0.013</div></div>
+              <div class="stat-card"><div class="k">Cases / Controls</div><div class="v" id="caseValue">148 / 621</div></div>
+            </div>
+          </div>
+
+          <div class="card panel">
+            <div style="display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+              <div>
+                <h2>Forest Plot</h2>
+                <p class="sub" style="margin-bottom:0;">Result visuals stay on the first page so users see the output right after running the analysis.</p>
+              </div>
+              <button class="btn secondary" id="refreshPlot" type="button">Refresh Plot</button>
+            </div>
+            <div class="plot-wrap">
+              <svg id="forestPlot" width="100%" viewBox="0 0 900 360" preserveAspectRatio="xMidYMid meet"></svg>
+            </div>
+          </div>
+
+          <div class="card panel">
+            <h2 style="margin-bottom:14px;">Detailed Clinical Signal Table</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event</th>
+                    <th>Reference Drug</th>
+                    <th>Comparator Group</th>
+                    <th>OR</th>
+                    <th>95% CI</th>
+                    <th>FDR</th>
+                    <th>Signal</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <section id="rawTab" class="tab-panel">
+      <div class="raw-layout">
+        <div class="card panel">
+          <div class="spreadsheet-head">
+            <div>
+              <h2>Raw Numbers Sheet</h2>
+              <p class="sub" style="margin-bottom:0;">This page is reserved for spreadsheet-style raw counts, case breakdowns, and exportable data tables.</p>
+            </div>
+            <div class="btn-row" style="margin-top:0;">
+              <button class="btn secondary" type="button">Export CSV</button>
+              <button class="btn secondary" type="button">Open Excel View</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th>Drug</th>
+                  <th>Normalized Name</th>
+                  <th>Event Term</th>
+                  <th>Case Count</th>
+                  <th>Non-Case Count</th>
+                  <th>Total Reports</th>
+                  <th>Window Start</th>
+                  <th>Window End</th>
+                </tr>
+              </thead>
+              <tbody id="rawTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="deliveryTab" class="tab-panel">
+      <div class="raw-layout">
+        <div class="card panel">
+          <div class="spreadsheet-head">
+            <div>
+              <h2>Report Delivery</h2>
+              <p class="sub" style="margin-bottom:0;">Simple post-analysis delivery settings for email, expiring links, and downloadable report bundles.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="recipientEmail">Recipient Email</label>
+              <input id="recipientEmail" type="email" placeholder="name@example.com" />
+            </div>
+            <div class="field">
+              <label for="expiryHours">Link Expiration</label>
+              <select id="expiryHours">
+                <option value="24">24 hours</option>
+                <option value="48">48 hours</option>
+                <option value="72">72 hours</option>
+                <option value="168">7 days</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="bundleType">Download Bundle</label>
+              <select id="bundleType">
+                <option>PDF + CSV + PNG</option>
+                <option>PDF only</option>
+                <option>CSV only</option>
+                <option>Full package</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="accessMode">Access Mode</label>
+              <select id="accessMode">
+                <option>Unique expiring link</option>
+                <option>Direct attachments</option>
+                <option>Both</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" style="background: var(--panel-soft); border: 1px solid var(--fda-border); border-radius: 16px; padding: 16px; margin-top: 6px; box-shadow: none;">
+            <div class="signal-pill good">Planned Workflow</div>
+            <div style="color: var(--text); line-height: 1.7; font-size: 14px;">
+              1. User runs analysis.<br>
+              2. Backend saves report files and raw tables.<br>
+              3. System generates a unique expiring link.<br>
+              4. User can email the link and also download the package directly.<br>
+              5. Recipient can request an extension before expiration.
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top: 16px;">
+            <button class="btn primary" type="button">Send Report Email</button>
+            <button class="btn secondary" type="button">Copy Expiring Link</button>
+            <button class="btn secondary" type="button">Download Bundle</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="methodsTab" class="tab-panel">
+      <div class="card panel">
+        <h2>Under the Hood</h2>
+        <p class="sub">Core modules that support normalization, retrieval, pooling, and signal detection.</p>
+        <div class="arch-list">
+          <div class="arch-item">
+            <strong>Drug Name Harmonization</strong>
+            <span>Maps brand names, generic names, dose strings, and product variants to one normalized FAERS query term.</span>
+          </div>
+          <div class="arch-item">
+            <strong>Comparator Pooling</strong>
+            <span>Aggregates many comparator drugs into one reference market group for landscape-level disproportionality assessment.</span>
+          </div>
+          <div class="arch-item">
+            <strong>Cached OpenFDA Retrieval</strong>
+            <span>Supports pagination, throttling, and local storage so users do not repeatedly fetch the same historical records.</span>
+          </div>
+          <div class="arch-item">
+            <strong>Signal Detection Layer</strong>
+            <span>Builds 2×2 tables, applies corrections, confidence intervals, and FDR adjustment before ranking findings.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const synonymMap = {
+      'erbitux': 'Cetuximab',
+      'cetuximab': 'Cetuximab',
+      'erbitux 2mg/ml': 'Cetuximab',
+      'avastin': 'Bevacizumab',
+      'bevacizumab': 'Bevacizumab',
+      'opdivo': 'Nivolumab',
+      'nivolumab': 'Nivolumab',
+      'keytruda': 'Pembrolizumab',
+      'pembrolizumab': 'Pembrolizumab',
+      'imfinzi': 'Durvalumab',
+      'durvalumab': 'Durvalumab',
+      'tecentriq': 'Atezolizumab',
+      'atezolizumab': 'Atezolizumab'
+    };
+
+    const meddraTerms = [
+      'Anaphylaxis',
+      'Infusion related reaction',
+      'QT prolonged',
+      'Interstitial lung disease',
+      'Rash',
+      'Stevens-Johnson syndrome'
+    ];
+
+    const comparatorSet = new Set(['Bevacizumab', 'Nivolumab', 'Pembrolizumab']);
+
+    const mockRows = [
+      { event: 'Anaphylaxis', or: 2.84, low: 1.92, high: 4.20, fdr: 0.013, ref: 148, comp: 621 },
+      { event: 'Infusion related reaction', or: 2.12, low: 1.44, high: 3.08, fdr: 0.021, ref: 132, comp: 590 },
+      { event: 'QT prolonged', or: 1.18, low: 0.81, high: 1.74, fdr: 0.211, ref: 41, comp: 278 },
+      { event: 'Interstitial lung disease', or: 1.64, low: 1.02, high: 2.55, fdr: 0.049, ref: 53, comp: 206 },
+      { event: 'Rash', or: 0.91, low: 0.68, high: 1.23, fdr: 0.402, ref: 87, comp: 431 }
+    ];
+
+    const chips = document.getElementById('chips');
+    const comparatorInput = document.getElementById('comparatorInput');
+    const referenceDrug = document.getElementById('referenceDrug');
+    const mappedReference = document.getElementById('mappedReference');
+    const tableBody = document.getElementById('tableBody');
+    const rawTableBody = document.getElementById('rawTableBody');
+    const forestPlot = document.getElementById('forestPlot');
+
+    function normalizeDrug(name) {
+      const key = (name || '').trim().toLowerCase();
+      return synonymMap[key] || (name || '').trim();
+    }
+
+    function levenshtein(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      }
+      return dp[m][n];
+    }
+
+    function closestMedDRATerm(input) {
+      const cleaned = (input || '').trim().toLowerCase();
+      if (!cleaned) return '';
+      let best = meddraTerms[0];
+      let bestScore = Infinity;
+      meddraTerms.forEach(term => {
+        const score = levenshtein(cleaned, term.toLowerCase());
+        if (score < bestScore) {
+          bestScore = score;
+          best = term;
+        }
+      });
+      return best;
+    }
+
+    function renderChips() {
+      chips.innerHTML = '';
+      [...comparatorSet].forEach(drug => {
+        const el = document.createElement('div');
+        el.className = 'chip';
+        el.innerHTML = `<span>${drug}</span><button type="button" data-drug="${drug}">×</button>`;
+        chips.appendChild(el);
+      });
+
+      chips.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          comparatorSet.delete(btn.dataset.drug);
+          renderChips();
+          updateSummary();
+          fillRawTable();
+        });
+      });
+    }
+
+    function fillTable() {
+      tableBody.innerHTML = '';
+      const ref = normalizeDrug(referenceDrug.value || 'Reference Drug');
+      const compName = `${comparatorSet.size}-drug pooled group`;
+      mockRows.forEach(row => {
+        const significant = row.fdr < 0.05;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.event}</td>
+          <td>${ref}</td>
+          <td>${compName}</td>
+          <td>${row.or.toFixed(2)}</td>
+          <td>${row.low.toFixed(2)}–${row.high.toFixed(2)}</td>
+          <td>${row.fdr.toFixed(3)}</td>
+          <td><span class="pill ${significant ? 'sig-yes' : 'sig-no'}">${significant ? 'Significant' : 'Not Significant'}</span></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function fillRawTable() {
+      rawTableBody.innerHTML = '';
+      const startDate = document.getElementById('startDate').value || '';
+      const endDate = document.getElementById('endDate').value || '';
+      const mappedEvent = closestMedDRATerm(document.getElementById('eventName').value);
+      const rows = [
+        {
+          drug: referenceDrug.value || 'Reference Drug',
+          normalized: normalizeDrug(referenceDrug.value || 'Reference Drug'),
+          event: mappedEvent,
+          cases: 148,
+          nonCases: 621,
+          total: 769,
+          start: startDate,
+          end: endDate
+        },
+        ...[...comparatorSet].map((drug, i) => ({
+          drug,
+          normalized: normalizeDrug(drug),
+          event: mappedEvent,
+          cases: 90 + i * 17,
+          nonCases: 210 + i * 43,
+          total: 300 + i * 60,
+          start: startDate,
+          end: endDate
+        }))
+      ];
+
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.drug}</td>
+          <td>${row.normalized}</td>
+          <td>${row.event}</td>
+          <td>${row.cases}</td>
+          <td>${row.nonCases}</td>
+          <td>${row.total}</td>
+          <td>${row.start}</td>
+          <td>${row.end}</td>
+        `;
+        rawTableBody.appendChild(tr);
+      });
+    }
+
+    function drawForestPlot() {
+      const left = 190;
+      const right = 820;
+      const top = 48;
+      const rowH = 50;
+      const xMin = 0.5;
+      const xMax = 5.0;
+      const ticks = [0.5, 1, 2, 3, 4, 5];
+      const usable = right - left;
+
+      const scaleX = (value) => {
+        const logMin = Math.log(xMin);
+        const logMax = Math.log(xMax);
+        const ratio = (Math.log(value) - logMin) / (logMax - logMin);
+        return left + ratio * usable;
+      };
+
+      let svg = `
+        <rect x="0" y="0" width="900" height="360" rx="18" fill="#ffffff" />
+        <text x="36" y="26" style="font-size:14px;font-weight:800;fill:#1f3c88;">Event</text>
+        <text x="760" y="26" style="font-size:14px;font-weight:800;fill:#1f3c88;">OR (95% CI)</text>
+      `;
+
+      ticks.forEach(tick => {
+        const x = scaleX(tick);
+        svg += `<line x1="${x}" y1="40" x2="${x}" y2="320" stroke="#d7e7f5" />`;
+        svg += `<text x="${x}" y="340" text-anchor="middle">${tick}</text>`;
+      });
+
+      const nullX = scaleX(1);
+      svg += `<line x1="${nullX}" y1="40" x2="${nullX}" y2="320" stroke="#b42318" stroke-width="2" stroke-dasharray="6 6" />`;
+
+      mockRows.forEach((row, i) => {
+        const y = top + i * rowH;
+        const x1 = scaleX(row.low);
+        const x2 = scaleX(row.high);
+        const xMid = scaleX(row.or);
+        const strong = row.fdr < 0.05;
+        const stroke = strong ? '#0071bc' : '#8ea9bf';
+        const fill = strong ? '#0071bc' : '#8ea9bf';
+        svg += `<text x="36" y="${y + 4}">${row.event}</text>`;
+        svg += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${stroke}" stroke-width="3" />`;
+        svg += `<line x1="${x1}" y1="${y - 8}" x2="${x1}" y2="${y + 8}" stroke="${stroke}" stroke-width="2" />`;
+        svg += `<line x1="${x2}" y1="${y - 8}" x2="${x2}" y2="${y + 8}" stroke="${stroke}" stroke-width="2" />`;
+        svg += `<circle cx="${xMid}" cy="${y}" r="7" fill="${fill}" />`;
+        svg += `<text x="760" y="${y + 4}">${row.or.toFixed(2)} (${row.low.toFixed(2)}–${row.high.toFixed(2)})</text>`;
+      });
+
+      forestPlot.innerHTML = svg;
+    }
+
+    function updateSummary() {
+      const ref = normalizeDrug(referenceDrug.value || 'Reference Drug');
+      const mappedTerm = closestMedDRATerm(document.getElementById('eventName').value);
+      const startDate = document.getElementById('startDate').value || 'start';
+      const endDate = document.getElementById('endDate').value || 'end';
+      const selected = mockRows.find(r => r.event.toLowerCase() === mappedTerm.toLowerCase()) || mockRows[0];
+      const significant = selected.fdr < 0.05;
+      const compCount = comparatorSet.size;
+      const compLabel = compCount === 1 ? '1-drug pooled comparator' : `${compCount}-drug pooled comparator`;
+
+      mappedReference.value = ref;
+      document.getElementById('mappedEvent').value = mappedTerm;
+      document.getElementById('primarySignal').textContent = mappedTerm || 'Adverse Event';
+      document.getElementById('summaryText').textContent = `${ref} vs ${compLabel}`;
+      document.getElementById('windowText').textContent = `${startDate} through ${endDate}`;
+      document.getElementById('orValue').textContent = selected.or.toFixed(2);
+      document.getElementById('ciValue').textContent = `${selected.low.toFixed(2)}–${selected.high.toFixed(2)}`;
+      document.getElementById('qValue').textContent = selected.fdr.toFixed(3);
+      document.getElementById('caseValue').textContent = `${selected.ref} / ${selected.comp}`;
+      document.getElementById('primarySignalText').textContent = significant
+        ? `Elevated disproportionality remains present for ${ref} after comparison against the ${compLabel} and FDR control.`
+        : `${mappedTerm} does not remain statistically significant after comparison against the ${compLabel} and FDR control for ${ref}.`;
+
+      const badge = document.getElementById('signalBadge');
+      badge.className = `signal-pill ${significant ? 'high' : 'watch'}`;
+      badge.textContent = significant ? 'High Signal Detected' : 'Review Signal';
+    }
+
+    function runMockAnalysis() {
+      updateSummary();
+      fillTable();
+      fillRawTable();
+      drawForestPlot();
+      switchTab('homeTab');
+      document.getElementById('forestPlot').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === tabId);
+      });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    document.getElementById('addComparator').addEventListener('click', () => {
+      const raw = comparatorInput.value.trim();
+      if (!raw) return;
+      comparatorSet.add(normalizeDrug(raw));
+      comparatorInput.value = '';
+      renderChips();
+      updateSummary();
+      fillRawTable();
+    });
+
+    referenceDrug.addEventListener('input', updateSummary);
+    document.getElementById('eventName').addEventListener('input', updateSummary);
+    document.getElementById('startDate').addEventListener('input', () => { updateSummary(); fillRawTable(); });
+    document.getElementById('endDate').addEventListener('input', () => { updateSummary(); fillRawTable(); });
+    document.getElementById('runAnalysis').addEventListener('click', runMockAnalysis);
+    document.getElementById('refreshPlot').addEventListener('click', drawForestPlot);
+
+    document.getElementById('loadExample').addEventListener('click', () => {
+      referenceDrug.value = 'Erbitux 2mg/mL';
+      document.getElementById('eventName').value = 'Anaphylaxis';
+      document.getElementById('startDate').value = '2015-01-01';
+      document.getElementById('endDate').value = '2024-12-31';
+      comparatorSet.clear();
+      ['Bevacizumab', 'Nivolumab', 'Pembrolizumab', 'Durvalumab', 'Atezolizumab'].forEach(x => comparatorSet.add(x));
+      renderChips();
+      runMockAnalysis();
+    });
+
+    renderChips();
+    runMockAnalysis();
+  </script>
+</body>
+</html>
